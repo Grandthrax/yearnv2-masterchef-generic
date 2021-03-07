@@ -57,7 +57,7 @@ contract Strategy is BaseStrategy {
 
     function _initializeStrat(address _masterchef, address _reward, address _router, uint256 _pid) internal {
         
-        require(router == uniswapRouter || router == sushiswapRouter, "incorrect router");
+        require(_router == uniswapRouter || _router == sushiswapRouter, "incorrect router");
 
         // You can set these parameters on deployment to whatever you want
         maxReportDelay = 6300;
@@ -105,7 +105,7 @@ contract Strategy is BaseStrategy {
 
     function setRouter(address _router, address[] calldata _path) public onlyGovernance {
         router = _router;
-        want.safeApprove(masterchef, uint256(-1));
+        IERC20(reward).safeApprove(router, 0);
         IERC20(reward).safeApprove(router, uint256(-1));
         path = _path;
 

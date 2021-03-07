@@ -100,9 +100,12 @@ def vault(pm, gov, rewards, guardian, management, token):
 
 
 @pytest.fixture
-def strategy(strategist, keeper, vault, Strategy, gov, bdp_masterchef, bdp):
+def strategy(strategist, keeper, vault, token, weth, Strategy, gov, bdp_masterchef, bdp):
     pid = 8
-    strategy = strategist.deploy(Strategy, vault, bdp_masterchef, bdp, pid)
+    router = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
+    path = [bdp, weth, token]
+    strategy = strategist.deploy(Strategy, vault, bdp_masterchef, bdp,router, pid)
+    strategy.setRouter(router, path, {"from": gov})
 
 
     strategy.setKeeper(keeper)

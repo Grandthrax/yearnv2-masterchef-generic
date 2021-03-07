@@ -4,20 +4,62 @@ from useful_methods import genericStateOfVault, genericStateOfStrat
 import random
 
 
-def test_normal_activity((accounts, token, vault, strategy, strategist, amount, whale):
+def test_apr(accounts, token, vault, strategy, strategist, whale):
+    strategist = accounts[0]
 
     amount = 1*1e18
     # Deposit to the vault
     token.approve(vault.address, amount, {"from": accounts[0]})
     vault.deposit(amount, {"from": accounts[0]})
     assert token.balanceOf(vault.address) == amount
-    
+
+    # harvest
+    strategy.harvest()
+    startingBalance = vault.totalAssets()
+    for i in range(2):
+
+        waitBlock = 25
+        # print(f'\n----wait {waitBlock} blocks----')
+        chain.mine(waitBlock)
+        chain.sleep(waitBlock * 13)
+        # print(f'\n----harvest----')
+        strategy.harvest({"from": strategist})
+
+        # genericStateOfStrat(strategy, currency, vault)
+        # genericStateOfVault(vault, currency)
+
+        profit = (vault.totalAssets() - startingBalance) / 1e6
+        strState = vault.strategies(strategy)
+        totalReturns = strState[6]
+        totaleth = totalReturns / 1e6
+        # print(f'Real Profit: {profit:.5f}')
+        difff = profit - totaleth
+        # print(f'Diff: {difff}')
+
+        blocks_per_year = 2_252_857
+        assert startingBalance != 0
+        time = (i + 1) * waitBlock
+        assert time != 0
+        apr = (totalReturns / startingBalance) * (blocks_per_year / time)
+        assert apr > 0 and apr < 1
+        # print(apr)
+        print(f"implied apr: {apr:.8%}")
+
+def test_normal_activity(accounts, token, vault, strategy, strategist, amount, whale):
+
+    amount = 1*1e18
+    # Deposit to the vault
+    token.approve(vault.address, amount, {"from": accounts[0]})
+    vault.deposit(amount, {"from": accounts[0]})
+    assert token.balanceOf(vault.address) == amount
+
     # harvest
     strategy.harvest()
     assert token.balanceOf(strategy.address) == amount
 
     for i in range(15):
         waitBlock = random.randint(10, 50)
+
 
     # withdrawal
     vault.withdraw({"from": accounts[0]})
