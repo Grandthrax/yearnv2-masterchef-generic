@@ -71,7 +71,6 @@ def keeper(accounts):
 
 @pytest.fixture
 def token(yfi):
-
     yield yfi
 
 
@@ -109,7 +108,7 @@ def vault(pm, gov, rewards, guardian, management, token):
 
 
 @pytest.fixture
-def strategy(strategist, keeper, vault, Strategy, gov, bdp_masterchef, bdp, router, pid):
+def strategy(strategist, keeper, vault, token, weth, Strategy, gov, bdp_masterchef, bdp, router, pid):
     strategy = strategist.deploy(Strategy, vault, bdp_masterchef, bdp, router, pid)
     path = [bdp, weth, token]
     strategy.setRouter(router, path, {"from": gov})
