@@ -305,7 +305,7 @@ contract Strategy is BaseStrategy {
         _sell();
     }
 
-    function emergencyWithdrawal(uint256 _pid) external onlyGovernance{
+    function emergencyWithdrawal(uint256 _pid) external  onlyGovernance{
         ChefLike(masterchef).emergencyWithdraw(_pid);
     }
 
