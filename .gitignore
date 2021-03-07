@@ -1,10 +1,10 @@
-# Brownie
 __pycache__
 .history
 .hypothesis/
 build/
 reports/
-.env
-
-# Node/npm
+@yearnvaults/
 node_modules/
+@openzeppelin/
+.DS_Store
+.nvmrc
