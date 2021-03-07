@@ -2,7 +2,9 @@ import brownie
 from brownie import Contract
 
 
-def test_operation(accounts, token, vault, strategy, strategist, amount):
+def test_operation(accounts, token, vault, strategy, strategist, amount, whale):
+
+    amount = 1*1e18
     # Deposit to the vault
     token.approve(vault.address, amount, {"from": accounts[0]})
     vault.deposit(amount, {"from": accounts[0]})

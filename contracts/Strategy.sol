@@ -45,13 +45,12 @@ contract Strategy is BaseStrategy {
     event Cloned(address indexed clone);
 
     constructor(address _vault, address _masterchef, address _reward, address _router, uint256 _pid) public BaseStrategy(_vault) {
-
-        _initialize(_vault, msg.sender, msg.sender, msg.sender);
         _initializeStrat(_masterchef, _reward, _router, _pid);
     }
 
        
     function initializeStrat(address _vault, address _strategist, address _rewards, address _keeper, address _masterchef, address _reward, address _router, uint256 _pid) external {
+        //note: initialise can only be called once. in _initialize in BaseStrategy we have: require(address(want) == address(0), "Strategy already initialized");
         _initialize(_vault, _strategist, _rewards, _keeper);
         _initializeStrat(_masterchef, _reward, _router, _pid);
     }
@@ -69,15 +68,19 @@ contract Strategy is BaseStrategy {
         router = _router;
         pid = _pid;
 
+        (address poolToken, , ,) = ChefLike(masterchef).poolInfo(pid);
+
+        require(poolToken == address(want), "wrong pid");
+
         want.safeApprove(_masterchef, uint256(-1));
         IERC20(reward).safeApprove(router, uint256(-1));
     }
 
-    function clone(address _vault, address _masterchef, address _reward, address _router, uint256 _pid) external returns (address newStrategy) {
-        newStrategy = this.clone(_vault, msg.sender, msg.sender, msg.sender, _masterchef, _reward, _router, _pid);
+    function cloneMasterchef(address _vault, address _masterchef, address _reward, address _router, uint256 _pid) external returns (address newStrategy) {
+        newStrategy = this.cloneMasterchef(_vault, msg.sender, msg.sender, msg.sender, _masterchef, _reward, _router, _pid);
     }
 
-    function clone(
+    function cloneMasterchef(
         address _vault,
         address _strategist,
         address _rewards,
@@ -129,7 +132,6 @@ contract Strategy is BaseStrategy {
             uint256 _debtPayment
         )
     {
-        _debtPayment = _debtOutstanding;
         ChefLike(masterchef).deposit(pid, 0);
 
         _sell();
@@ -140,6 +142,7 @@ contract Strategy is BaseStrategy {
         uint256 debt = vault.strategies(address(this)).totalDebt;
 
         if (assets > debt) {
+            _debtPayment = _debtOutstanding;
             _profit = assets - debt;
 
             uint256 amountToFree = _profit.add(_debtPayment);

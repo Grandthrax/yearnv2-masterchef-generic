@@ -12,6 +12,33 @@ def gov(accounts):
 def rewards(accounts):
     yield accounts[1]
 
+@pytest.fixture
+def whale(accounts):
+    # big binance7 wallet
+    # acc = accounts.at('0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8', force=True)
+    # big binance8 wallet
+    acc = accounts.at("0xBa37B002AbaFDd8E89a1995dA52740bbC013D992", force=True)
+
+    # lots of weth account
+    #wethAcc = accounts.at("0x767Ecb395def19Ab8d1b2FCc89B3DDfBeD28fD6b", force=True)
+    #weth.approve(acc, 2 ** 256 - 1, {"from": wethAcc})
+    #weth.transfer(acc, weth.balanceOf(wethAcc), {"from": wethAcc})
+
+    #assert weth.balanceOf(acc) > 0
+    yield acc
+    
+
+@pytest.fixture
+def yfi(interface):
+    yield interface.ERC20("0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e")
+
+@pytest.fixture
+def bdp_masterchef(interface):
+    yield interface.ERC20("0x0De845955E2bF089012F682fE9bC81dD5f11B372")
+
+@pytest.fixture
+def bdp(interface):
+    yield interface.ERC20("0xf3dcbc6D72a4E1892f7917b7C43b74131Df8480e")
 
 @pytest.fixture
 def guardian(accounts):
@@ -34,9 +61,9 @@ def keeper(accounts):
 
 
 @pytest.fixture
-def token():
-    token_address = "0x6b175474e89094c44da98b954eedeac495271d0f"  # this should be the address of the ERC-20 used by the strategy/vault (DAI)
-    yield Contract(token_address)
+def token(yfi):
+    
+    yield yfi
 
 
 @pytest.fixture
@@ -73,8 +100,11 @@ def vault(pm, gov, rewards, guardian, management, token):
 
 
 @pytest.fixture
-def strategy(strategist, keeper, vault, Strategy, gov):
-    strategy = strategist.deploy(Strategy, vault)
+def strategy(strategist, keeper, vault, Strategy, gov, bdp_masterchef, bdp):
+    pid = 8
+    strategy = strategist.deploy(Strategy, vault, bdp_masterchef, bdp, pid)
+
+
     strategy.setKeeper(keeper)
     vault.addStrategy(strategy, 10_000, 0, 2 ** 256 - 1, 1_000, {"from": gov})
     yield strategy
