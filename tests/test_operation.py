@@ -4,13 +4,13 @@ from useful_methods import genericStateOfVault, genericStateOfStrat
 import random
 
 
-def test_apr(accounts, token, vault, strategy, strategist, whale):
+def test_apr(accounts, token, vault, strategy, chain, strategist, whale):
     strategist = accounts[0]
 
     amount = 1*1e18
     # Deposit to the vault
-    token.approve(vault.address, amount, {"from": accounts[0]})
-    vault.deposit(amount, {"from": accounts[0]})
+    token.approve(vault, amount, {"from": whale})
+    vault.deposit(amount, {"from": whale})
     assert token.balanceOf(vault.address) == amount
 
     # harvest
@@ -28,10 +28,10 @@ def test_apr(accounts, token, vault, strategy, strategist, whale):
         # genericStateOfStrat(strategy, currency, vault)
         # genericStateOfVault(vault, currency)
 
-        profit = (vault.totalAssets() - startingBalance) / 1e6
+        profit = (vault.totalAssets() - startingBalance) / 1e18
         strState = vault.strategies(strategy)
         totalReturns = strState[6]
-        totaleth = totalReturns / 1e6
+        totaleth = totalReturns / 1e18
         # print(f'Real Profit: {profit:.5f}')
         difff = profit - totaleth
         # print(f'Diff: {difff}')
@@ -41,9 +41,11 @@ def test_apr(accounts, token, vault, strategy, strategist, whale):
         time = (i + 1) * waitBlock
         assert time != 0
         apr = (totalReturns / startingBalance) * (blocks_per_year / time)
-        assert apr > 0 and apr < 1
+        assert apr > 0
         # print(apr)
         print(f"implied apr: {apr:.8%}")
+        genericStateOfStrat(strategy, token, vault)
+        genericStateOfVault(vault, token)
 
 def test_normal_activity(accounts, token, vault, strategy, strategist, amount, whale):
 

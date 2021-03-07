@@ -212,7 +212,11 @@ contract Strategy is BaseStrategy {
 
     //sell all function
     function _sell() internal {
-        IUniswapV2Router02(router).swapExactTokensForETH(IERC20(reward).balanceOf(address(this)), uint256(0), path, address(this), now);
+        uint256 rewardBal = IERC20(reward).balanceOf(address(this));
+        if( rewardBal > 0){
+            IUniswapV2Router02(router).swapExactTokensForTokens(rewardBal, uint256(0), path, address(this), now);
+        }
+        
 
     }
 
