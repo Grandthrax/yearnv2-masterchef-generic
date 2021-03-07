@@ -111,5 +111,6 @@ def vault(pm, gov, rewards, guardian, management, token):
 def strategy(strategist, keeper, vault, token, weth, Strategy, gov, bdp_masterchef, bdp, router, pid):
     strategy = strategist.deploy(Strategy, vault, bdp_masterchef, bdp, router, pid)
     strategy.setKeeper(keeper)
+
     vault.addStrategy(strategy, 10_000, 0, 2 ** 256 - 1, 1_000, {"from": gov})
     yield strategy

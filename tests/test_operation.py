@@ -48,6 +48,7 @@ def test_apr(accounts, token, vault, strategy, chain, strategist, whale):
 def test_normal_activity(accounts, token, vault, strategy, strategist, whale, chain):
 
     amount = 1*1e18
+    bbefore= token.balanceOf(whale)
 
     # Deposit to the vault
     token.approve(vault, amount, {"from": whale})
@@ -63,10 +64,25 @@ def test_normal_activity(accounts, token, vault, strategy, strategist, whale, ch
     chain.sleep(60000)
     # withdrawal
     vault.withdraw({"from": whale})
-    assert token.balanceOf(whale) > amount
+    assert token.balanceOf(whale) > bbefore
     genericStateOfStrat(strategy, token, vault)
     genericStateOfVault(vault, token)
 
+def test_emergency_withdraw(accounts, token, vault, strategy, strategist, whale, chain, pid):
+
+    amount = 1*1e18
+    bbefore= token.balanceOf(whale)
+
+    # Deposit to the vault
+    token.approve(vault, amount, {"from": whale})
+    vault.deposit(amount, {"from": whale})
+    assert token.balanceOf(vault.address) == amount
+
+    # harvest deposit into staking contract
+    strategy.harvest()
+    assert token.balanceOf(strategy) == 0
+    strategy.emergencyWithdrawal(pid, {'from': accounts[0]})
+    assert token.balanceOf(strategy) >= amount
 
 def test_emergency_exit(accounts, token, vault, strategy, strategist, amount):
     # Deposit to the vault
@@ -150,3 +166,4 @@ def test_triggers(gov, vault, strategy, token, amount, weth, weth_amout):
 
     strategy.harvestTrigger(0)
     strategy.tendTrigger(0)
+
