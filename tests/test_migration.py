@@ -3,14 +3,19 @@
 #       Show that nothing is lost!
 
 
-def test_migration(token, vault, strategy, amount, Strategy, strategist, gov):
+def test_migration(token, vault, strategy, Strategy, strategist, whale, gov, bdp_masterchef, bdp, router, pid):
     # Deposit to the vault and harvest
-    token.approve(vault.address, amount, {"from": gov})
-    vault.deposit(amount, {"from": gov})
+    amount = 1 *1e18
+    token.approve(vault.address, amount, {"from": whale})
+    vault.deposit(amount, {"from": whale})
     strategy.harvest()
-    assert token.balanceOf(strategy.address) == amount
+    
+    tx = strategy.cloneStrategy(vault, bdp_masterchef, bdp, router, pid)
+    
 
     # migrate to a new strategy
-    new_strategy = strategist.deploy(Strategy, vault)
+    new_strategy = Strategy.at(tx.return_value)
     strategy.migrate(new_strategy.address, {"from": gov})
-    assert token.balanceOf(new_strategy.address) == amount
+    
+    assert new_strategy.estimatedTotalAssets() > 0
+    assert strategy.estimatedTotalAssets() == 0

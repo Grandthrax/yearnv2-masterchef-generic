@@ -53,6 +53,9 @@ contract Strategy is BaseStrategy {
         address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
     address private constant sushiswapRouter =
         address(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F);
+    address private constant weth =
+        address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
+
     address public router;
 
     uint256 public pid;
@@ -118,14 +121,14 @@ contract Strategy is BaseStrategy {
         IERC20(reward).safeApprove(router, uint256(-1));
     }
 
-    function cloneMasterchef(
+    function cloneStrategy(
         address _vault,
         address _masterchef,
         address _reward,
         address _router,
         uint256 _pid
     ) external returns (address newStrategy) {
-        newStrategy = this.cloneMasterchef(
+        newStrategy = this.cloneStrategy(
             _vault,
             msg.sender,
             msg.sender,
@@ -137,7 +140,7 @@ contract Strategy is BaseStrategy {
         );
     }
 
-    function cloneMasterchef(
+    function cloneStrategy(
         address _vault,
         address _strategist,
         address _rewards,
@@ -179,19 +182,27 @@ contract Strategy is BaseStrategy {
         emit Cloned(newStrategy);
     }
 
-    function setRouter(address _router, address[] calldata _path)
+    function setRouter(address _router)
         public
-        onlyGovernance
+        onlyAuthorized
     {
+        require(
+            _router == uniswapRouter || _router == sushiswapRouter,
+            "incorrect router"
+        );
+
         router = _router;
         IERC20(reward).safeApprove(router, 0);
         IERC20(reward).safeApprove(router, uint256(-1));
+
+    }
+
+    function setPath(address[] calldata _path)
+        public
+        onlyGovernance
+    {
         path = _path;
 
-        require(
-            router == uniswapRouter || router == sushiswapRouter,
-            "incorrect router"
-        );
     }
 
     // ******** OVERRIDE THESE METHODS FROM BASE CONTRACT ************
@@ -296,11 +307,29 @@ contract Strategy is BaseStrategy {
 
     //sell all function
     function _sell() internal {
+
         uint256 rewardBal = IERC20(reward).balanceOf(address(this));
-        if( rewardBal > 0){
-            IUniswapV2Router02(router).swapExactTokensForTokens(rewardBal, uint256(0), path, address(this), now);
+        if( rewardBal == 0){
+            return;
         }
-        
+
+
+        if(path.length == 0){
+            address[] memory tpath;
+            if(address(want) != weth){
+                tpath = new address[](3);
+                tpath[2] = address(want);
+            }else{
+                tpath = new address[](2);
+            }
+            
+            tpath[0] = address(reward);
+            tpath[1] = weth;
+
+            IUniswapV2Router02(router).swapExactTokensForTokens(rewardBal, uint256(0), tpath, address(this), now);
+        }else{
+            IUniswapV2Router02(router).swapExactTokensForTokens(rewardBal, uint256(0), path, address(this), now);
+        }  
 
     }
 

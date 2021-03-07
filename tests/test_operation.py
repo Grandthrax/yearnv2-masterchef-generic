@@ -18,7 +18,7 @@ def test_apr(accounts, token, vault, strategy, chain, strategist, whale):
     startingBalance = vault.totalAssets()
     for i in range(2):
 
-        waitBlock = 25
+        waitBlock = 50
         # print(f'\n----wait {waitBlock} blocks----')
         chain.mine(waitBlock)
         chain.sleep(waitBlock * 13)
@@ -30,7 +30,7 @@ def test_apr(accounts, token, vault, strategy, chain, strategist, whale):
 
         profit = (vault.totalAssets() - startingBalance) / 1e18
         strState = vault.strategies(strategy)
-        totalReturns = strState[6]
+        totalReturns = strState[7]
         totaleth = totalReturns / 1e18
         # print(f'Real Profit: {profit:.5f}')
         difff = profit - totaleth
@@ -44,28 +44,28 @@ def test_apr(accounts, token, vault, strategy, chain, strategist, whale):
         assert apr > 0
         # print(apr)
         print(f"implied apr: {apr:.8%}")
-        genericStateOfStrat(strategy, token, vault)
-        genericStateOfVault(vault, token)
 
-def test_normal_activity(accounts, token, vault, strategy, strategist, amount, whale):
+def test_normal_activity(accounts, token, vault, strategy, strategist, whale, chain):
 
     amount = 1*1e18
+
     # Deposit to the vault
-    token.approve(vault.address, amount, {"from": accounts[0]})
-    vault.deposit(amount, {"from": accounts[0]})
+    token.approve(vault, amount, {"from": whale})
+    vault.deposit(amount, {"from": whale})
     assert token.balanceOf(vault.address) == amount
 
     # harvest
     strategy.harvest()
-    assert token.balanceOf(strategy.address) == amount
-
     for i in range(15):
         waitBlock = random.randint(10, 50)
 
-
+    strategy.harvest()
+    chain.sleep(60000)
     # withdrawal
-    vault.withdraw({"from": accounts[0]})
-    assert token.balanceOf(accounts[0]) != 0
+    vault.withdraw({"from": whale})
+    assert token.balanceOf(whale) > amount
+    genericStateOfStrat(strategy, token, vault)
+    genericStateOfVault(vault, token)
 
 
 def test_emergency_exit(accounts, token, vault, strategy, strategist, amount):
