@@ -1,6 +1,5 @@
 import pytest
-from brownie import config
-from brownie import Contract
+from brownie import config, Contract
 
 
 @pytest.fixture
@@ -26,7 +25,7 @@ def whale(accounts):
 
     #assert weth.balanceOf(acc) > 0
     yield acc
-    
+
 
 @pytest.fixture
 def yfi(interface):
@@ -39,6 +38,16 @@ def bdp_masterchef(interface):
 @pytest.fixture
 def bdp(interface):
     yield interface.ERC20("0xf3dcbc6D72a4E1892f7917b7C43b74131Df8480e")
+
+
+@pytest.fixture
+def router():
+    yield Contract("0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D")
+
+
+@pytest.fixture
+def pid():
+    yield 8
 
 @pytest.fixture
 def guardian(accounts):
@@ -62,7 +71,6 @@ def keeper(accounts):
 
 @pytest.fixture
 def token(yfi):
-    
     yield yfi
 
 
@@ -100,14 +108,10 @@ def vault(pm, gov, rewards, guardian, management, token):
 
 
 @pytest.fixture
-def strategy(strategist, keeper, vault, token, weth, Strategy, gov, bdp_masterchef, bdp):
-    pid = 8
-    router = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
+def strategy(strategist, keeper, vault, token, weth, Strategy, gov, bdp_masterchef, bdp, router, pid):
+    strategy = strategist.deploy(Strategy, vault, bdp_masterchef, bdp, router, pid)
     path = [bdp, weth, token]
-    strategy = strategist.deploy(Strategy, vault, bdp_masterchef, bdp,router, pid)
     strategy.setRouter(router, path, {"from": gov})
-
-
     strategy.setKeeper(keeper)
     vault.addStrategy(strategy, 10_000, 0, 2 ** 256 - 1, 1_000, {"from": gov})
     yield strategy
