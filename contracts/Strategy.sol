@@ -49,7 +49,7 @@ contract Strategy is BaseStrategy {
     }
 
        
-    function initializeStrat(address _vault, address _strategist, address _rewards, address _keeper, address _masterchef, address _reward, address _router, uint256 _pid) external {
+    function initialize(address _vault, address _strategist, address _rewards, address _keeper, address _masterchef, address _reward, address _router, uint256 _pid) external {
         //note: initialise can only be called once. in _initialize in BaseStrategy we have: require(address(want) == address(0), "Strategy already initialized");
         _initialize(_vault, _strategist, _rewards, _keeper);
         _initializeStrat(_masterchef, _reward, _router, _pid);
@@ -98,7 +98,7 @@ contract Strategy is BaseStrategy {
             newStrategy := create(0, clone_code, 0x37)
         }
 
-        Strategy(newStrategy).initializeStrat(_vault, _strategist, _rewards, _keeper, _masterchef, _reward, _router, _pid);
+        Strategy(newStrategy).initialize(_vault, _strategist, _rewards, _keeper, _masterchef, _reward, _router, _pid);
 
         emit Cloned(newStrategy);
     }
