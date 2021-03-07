@@ -23,12 +23,11 @@ def test_migration(token, vault, chain, strategy, Strategy, strategist, whale, g
 
     # migrate to a new strategy
     new_strategy = Strategy.at(tx.return_value)
-    strategy.migrate(new_strategy.address, {"from": gov})
-    
-    assert new_strategy.estimatedTotalAssets() >= amount
-    assert strategy.estimatedTotalAssets() == 0
+
 
     vault.migrateStrategy(strategy, new_strategy, {"from": gov})
+    assert new_strategy.estimatedTotalAssets() >= amount
+    assert strategy.estimatedTotalAssets() == 0
 
     new_strategy.harvest({"from": gov})
 

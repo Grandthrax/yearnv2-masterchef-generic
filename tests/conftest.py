@@ -95,7 +95,14 @@ def weth_amout(gov, weth):
     weth_amout = 10 ** weth.decimals()
     gov.transfer(weth, weth_amout)
     yield weth_amout
+@pytest.fixture
+def live_vault(pm, gov, rewards, guardian, management, token):
+    Vault = pm(config["dependencies"][0]).Vault
+    yield Vault.at('0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1')
 
+@pytest.fixture
+def live_strat(Strategy):
+    yield Strategy.at('0xd4419DDc50170CB2DBb0c5B4bBB6141F3bCc923B')
 
 @pytest.fixture
 def vault(pm, gov, rewards, guardian, management, token):
