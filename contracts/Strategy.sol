@@ -7,10 +7,25 @@ pragma experimental ABIEncoderV2;
 
 interface ChefLike {
     function deposit(uint256 _pid, uint256 _amount) external;
+
     function withdraw(uint256 _pid, uint256 _amount) external;
+
     function emergencyWithdraw(uint256 _pid) external;
-    function poolInfo(uint256 _pid) external view returns (address,uint,uint,uint);
-    function userInfo(uint256 _pid, address user) external view returns (uint,uint);
+
+    function poolInfo(uint256 _pid)
+        external
+        view
+        returns (
+            address,
+            uint256,
+            uint256,
+            uint256
+        );
+
+    function userInfo(uint256 _pid, address user)
+        external
+        view
+        returns (uint256, uint256);
 }
 
 // These are the core Yearn libraries
@@ -34,8 +49,10 @@ contract Strategy is BaseStrategy {
     address public masterchef;
     address public reward;
 
-    address private constant uniswapRouter = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
-    address private constant sushiswapRouter = 0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F; 
+    address private constant uniswapRouter =
+        address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+    address private constant sushiswapRouter =
+        address(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F);
     address public router;
 
     uint256 public pid;
@@ -44,20 +61,45 @@ contract Strategy is BaseStrategy {
 
     event Cloned(address indexed clone);
 
-    constructor(address _vault, address _masterchef, address _reward, address _router, uint256 _pid) public BaseStrategy(_vault) {
+    constructor(
+        address _vault,
+        address _masterchef,
+        address _reward,
+        address _router,
+        uint256 _pid
+    ) public BaseStrategy(_vault) {
         _initializeStrat(_masterchef, _reward, _router, _pid);
     }
 
-       
-    function initialize(address _vault, address _strategist, address _rewards, address _keeper, address _masterchef, address _reward, address _router, uint256 _pid) external {
+    function initialize(
+        address _vault,
+        address _strategist,
+        address _rewards,
+        address _keeper,
+        address _masterchef,
+        address _reward,
+        address _router,
+        uint256 _pid
+    ) external {
         //note: initialise can only be called once. in _initialize in BaseStrategy we have: require(address(want) == address(0), "Strategy already initialized");
         _initialize(_vault, _strategist, _rewards, _keeper);
         _initializeStrat(_masterchef, _reward, _router, _pid);
     }
 
-    function _initializeStrat(address _masterchef, address _reward, address _router, uint256 _pid) internal {
-        
-        require(_router == uniswapRouter || _router == sushiswapRouter, "incorrect router");
+    function _initializeStrat(
+        address _masterchef,
+        address _reward,
+        address _router,
+        uint256 _pid
+    ) internal {
+        require(
+            router == address(0),
+            "Masterchef Strategy already initialized"
+        );
+        require(
+            _router == uniswapRouter || _router == sushiswapRouter,
+            "incorrect router"
+        );
 
         // You can set these parameters on deployment to whatever you want
         maxReportDelay = 6300;
@@ -68,7 +110,7 @@ contract Strategy is BaseStrategy {
         router = _router;
         pid = _pid;
 
-        (address poolToken, , ,) = ChefLike(masterchef).poolInfo(pid);
+        (address poolToken, , , ) = ChefLike(masterchef).poolInfo(pid);
 
         require(poolToken == address(want), "wrong pid");
 
@@ -76,15 +118,34 @@ contract Strategy is BaseStrategy {
         IERC20(reward).safeApprove(router, uint256(-1));
     }
 
-    function cloneMasterchef(address _vault, address _masterchef, address _reward, address _router, uint256 _pid) external returns (address newStrategy) {
-        newStrategy = this.cloneMasterchef(_vault, msg.sender, msg.sender, msg.sender, _masterchef, _reward, _router, _pid);
+    function cloneMasterchef(
+        address _vault,
+        address _masterchef,
+        address _reward,
+        address _router,
+        uint256 _pid
+    ) external returns (address newStrategy) {
+        newStrategy = this.cloneMasterchef(
+            _vault,
+            msg.sender,
+            msg.sender,
+            msg.sender,
+            _masterchef,
+            _reward,
+            _router,
+            _pid
+        );
     }
 
     function cloneMasterchef(
         address _vault,
         address _strategist,
         address _rewards,
-        address _keeper, address _masterchef, address _reward, address _router, uint256 _pid
+        address _keeper,
+        address _masterchef,
+        address _reward,
+        address _router,
+        uint256 _pid
     ) external returns (address newStrategy) {
         // Copied from https://github.com/optionality/clone-factory/blob/master/contracts/CloneFactory.sol
         bytes20 addressBytes = bytes20(address(this));
@@ -92,24 +153,45 @@ contract Strategy is BaseStrategy {
         assembly {
             // EIP-1167 bytecode
             let clone_code := mload(0x40)
-            mstore(clone_code, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
+            mstore(
+                clone_code,
+                0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000
+            )
             mstore(add(clone_code, 0x14), addressBytes)
-            mstore(add(clone_code, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
+            mstore(
+                add(clone_code, 0x28),
+                0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000
+            )
             newStrategy := create(0, clone_code, 0x37)
         }
 
-        Strategy(newStrategy).initialize(_vault, _strategist, _rewards, _keeper, _masterchef, _reward, _router, _pid);
+        Strategy(newStrategy).initialize(
+            _vault,
+            _strategist,
+            _rewards,
+            _keeper,
+            _masterchef,
+            _reward,
+            _router,
+            _pid
+        );
 
         emit Cloned(newStrategy);
     }
 
-    function setRouter(address _router, address[] calldata _path) public onlyGovernance {
+    function setRouter(address _router, address[] calldata _path)
+        public
+        onlyGovernance
+    {
         router = _router;
         IERC20(reward).safeApprove(router, 0);
         IERC20(reward).safeApprove(router, uint256(-1));
         path = _path;
 
-        require(router == uniswapRouter || router == sushiswapRouter, "incorrect router");
+        require(
+            router == uniswapRouter || router == sushiswapRouter,
+            "incorrect router"
+        );
     }
 
     // ******** OVERRIDE THESE METHODS FROM BASE CONTRACT ************
@@ -119,7 +201,8 @@ contract Strategy is BaseStrategy {
     }
 
     function estimatedTotalAssets() public view override returns (uint256) {
-        (uint deposited,) = ChefLike(masterchef).userInfo(pid, address(this));
+        (uint256 deposited, ) =
+            ChefLike(masterchef).userInfo(pid, address(this));
         return want.balanceOf(address(this)).add(deposited);
     }
 
@@ -158,15 +241,17 @@ contract Strategy is BaseStrategy {
                         _profit = newLoose;
                         _debtPayment = 0;
                     } else {
-                        _debtPayment = Math.min(newLoose - _profit, _debtPayment);
+                        _debtPayment = Math.min(
+                            newLoose - _profit,
+                            _debtPayment
+                        );
                     }
                 }
             }
-        }else{
+        } else {
             //serious loss should never happen but if it does lets record it accurately
             _loss = debt - assets;
         }
-
     }
 
     function adjustPosition(uint256 _debtOutstanding) internal override {
@@ -183,21 +268,20 @@ contract Strategy is BaseStrategy {
         override
         returns (uint256 _liquidatedAmount, uint256 _loss)
     {
-        
         uint256 totalAssets = want.balanceOf(address(this));
         if (_amountNeeded > totalAssets) {
             uint256 amountToFree = _amountNeeded.sub(totalAssets);
 
-            (uint deposited,) = ChefLike(masterchef).userInfo(pid, address(this));
-            if(deposited < amountToFree){
+            (uint256 deposited, ) =
+                ChefLike(masterchef).userInfo(pid, address(this));
+            if (deposited < amountToFree) {
                 amountToFree = deposited;
             }
-            if(deposited > 0){
+            if (deposited > 0) {
                 ChefLike(masterchef).withdraw(pid, amountToFree);
             }
 
             _liquidatedAmount = want.balanceOf(address(this));
-
         } else {
             _liquidatedAmount = _amountNeeded;
         }
@@ -212,8 +296,13 @@ contract Strategy is BaseStrategy {
 
     //sell all function
     function _sell() internal {
-        IUniswapV2Router02(router).swapExactTokensForETH(IERC20(reward).balanceOf(address(this)), uint256(0), path, address(this), now);
-
+        IUniswapV2Router02(router).swapExactTokensForETH(
+            IERC20(reward).balanceOf(address(this)),
+            uint256(0),
+            path,
+            address(this),
+            now
+        );
     }
 
     function protectedTokens()
