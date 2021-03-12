@@ -20,27 +20,45 @@ def test_migrate_live(accounts, Strategy, token, live_vault, live_strat, chain, 
     assert new_strategy.estimatedTotalAssets() >= before
     assert strategy.estimatedTotalAssets() == 0
 
-def test_live_snapshot(accounts, token, RescueStrategy, Strategy, live_vault, live_strat, chain, strategist, whale,bdp_masterchef, bdp, router, pid):
+def test_rescue_snapshot(accounts, yfi, weth, RescueStrategy, Strategy, live_vault, live_strat_weth, live_vault_weth, live_strat, chain, strategist, whale,bdp_masterchef, bdp, router, pid):
     gov = accounts.at(live_vault.governance(), force=True)
     strategist = gov
-    strategy = live_strat
-    vault = live_vault
+    yfi_strategy = live_strat
+    yfi_vault = live_vault
 
-    #vault.addStrategy(strategy, 9500, 0, 2**256-1, 1000, {'from': gov})
-    pid = strategy.pid()
+    weth_strategy = live_strat_weth
+    weth_vault = live_vault_weth
+
+    yfi_pid = yfi_strategy.pid()
+    weth_pid = weth_strategy.pid()
     
-    new_strategy = gov.deploy(RescueStrategy, vault)
+    yfi_rescue_strategy = gov.deploy(RescueStrategy, yfi_vault)
+    
+    tx = yfi_rescue_strategy.cloneRescueStrategy(weth_vault)
+    weth_rescue_strategy = RescueStrategy.at(tx.return_value)
 
-    strategy.emergencyWithdrawal(pid,{'from': gov})
-    vault.migrateStrategy(strategy, new_strategy, {"from": gov})
-    vault.updateStrategyDebtRatio(new_strategy, 0, {'from': gov})
-    new_strategy.harvest({'from': gov})
+    yfi_strategy.emergencyWithdrawal(yfi_pid, {'from': gov})
+    weth_strategy.emergencyWithdrawal(weth_pid, {'from': gov})
 
-    genericStateOfStrat(strategy, token, vault)
-    genericStateOfVault(vault, token)
+    yfi_vault.migrateStrategy(yfi_strategy, yfi_rescue_strategy, {"from": gov})
+    weth_vault.migrateStrategy(weth_strategy, weth_rescue_strategy, {"from": gov})
 
-    genericStateOfStrat(new_strategy, token, vault)
-    genericStateOfVault(vault, token)
+    yfi_vault.updateStrategyDebtRatio(yfi_rescue_strategy, 0, {'from': gov})
+    weth_vault.updateStrategyDebtRatio(weth_rescue_strategy, 0, {'from': gov})
+
+    yfi_rescue_strategy.harvest({'from': gov})
+    weth_rescue_strategy.harvest({'from': gov})
+
+    genericStateOfStrat(yfi_rescue_strategy, yfi, yfi_vault)
+    genericStateOfVault(yfi_vault, yfi)
+    genericStateOfStrat(weth_rescue_strategy, weth, weth_vault)
+    genericStateOfVault(weth_vault, weth)
+
+    #genericStateOfStrat(strategy, token, vault)
+    #genericStateOfVault(vault, token)
+
+    #genericStateOfStrat(new_strategy, token, vault)
+    #genericStateOfVault(vault, token)
 
 def test_apr_live(accounts, token, live_vault, live_strat, chain, strategist, whale):
     gov = accounts.at(live_vault.governance(), force=True)
