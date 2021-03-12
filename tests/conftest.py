@@ -105,6 +105,15 @@ def live_strat(Strategy):
     yield Strategy.at('0xd4419DDc50170CB2DBb0c5B4bBB6141F3bCc923B')
 
 @pytest.fixture
+def live_vault_weth(pm, gov, rewards, guardian, management, token):
+    Vault = pm(config["dependencies"][0]).Vault
+    yield Vault.at('0xa9fE4601811213c340e850ea305481afF02f5b28')
+
+@pytest.fixture
+def live_strat_weth(Strategy):
+    yield Strategy.at('0xDdf11AEB5Ce1E91CF19C7E2374B0F7A88803eF36')
+
+@pytest.fixture
 def vault(pm, gov, rewards, guardian, management, token):
     Vault = pm(config["dependencies"][0]).Vault
     vault = guardian.deploy(Vault)
