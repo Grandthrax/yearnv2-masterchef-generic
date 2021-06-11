@@ -23,5 +23,8 @@ interface IUniswapV1Exchange {
         uint256
     ) external returns (uint256);
 
-    function ethToTokenSwapInput(uint256, uint256) external payable returns (uint256);
+    function ethToTokenSwapInput(uint256, uint256)
+        external
+        payable
+        returns (uint256);
 }

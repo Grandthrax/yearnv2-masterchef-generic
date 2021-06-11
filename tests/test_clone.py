@@ -16,7 +16,7 @@ def test_clone(
     bdp_masterchef,
     bdp,
     router,
-    pid
+    pid,
 ):
     # Shouldn't be able to call initialize again
     with brownie.reverts():
@@ -33,7 +33,7 @@ def test_clone(
         )
 
     # Clone the strategy
-    tx = strategy.cloneMasterchef(
+    tx = strategy.cloneStrategy(
         vault,
         strategist,
         rewards,
@@ -59,6 +59,5 @@ def test_clone(
             pid,
             {"from": gov},
         )
-
 
     # TODO: do a migrate and test a harvest

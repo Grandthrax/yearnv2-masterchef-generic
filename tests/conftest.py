@@ -11,6 +11,7 @@ def gov(accounts):
 def rewards(accounts):
     yield accounts[1]
 
+
 @pytest.fixture
 def whale(accounts):
     # big binance7 wallet
@@ -19,11 +20,11 @@ def whale(accounts):
     acc = accounts.at("0xBa37B002AbaFDd8E89a1995dA52740bbC013D992", force=True)
 
     # lots of weth account
-    #wethAcc = accounts.at("0x767Ecb395def19Ab8d1b2FCc89B3DDfBeD28fD6b", force=True)
-    #weth.approve(acc, 2 ** 256 - 1, {"from": wethAcc})
-    #weth.transfer(acc, weth.balanceOf(wethAcc), {"from": wethAcc})
+    # wethAcc = accounts.at("0x767Ecb395def19Ab8d1b2FCc89B3DDfBeD28fD6b", force=True)
+    # weth.approve(acc, 2 ** 256 - 1, {"from": wethAcc})
+    # weth.transfer(acc, weth.balanceOf(wethAcc), {"from": wethAcc})
 
-    #assert weth.balanceOf(acc) > 0
+    # assert weth.balanceOf(acc) > 0
     yield acc
 
 
@@ -31,9 +32,11 @@ def whale(accounts):
 def yfi(interface):
     yield interface.ERC20("0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e")
 
+
 @pytest.fixture
 def bdp_masterchef(interface):
     yield interface.ERC20("0x0De845955E2bF089012F682fE9bC81dD5f11B372")
+
 
 @pytest.fixture
 def bdp(interface):
@@ -48,6 +51,7 @@ def router():
 @pytest.fixture
 def pid():
     yield 8
+
 
 @pytest.fixture
 def guardian(accounts):
@@ -95,23 +99,29 @@ def weth_amout(gov, weth):
     weth_amout = 10 ** weth.decimals()
     gov.transfer(weth, weth_amout)
     yield weth_amout
+
+
 @pytest.fixture
 def live_vault(pm, gov, rewards, guardian, management, token):
     Vault = pm(config["dependencies"][0]).Vault
-    yield Vault.at('0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1')
+    yield Vault.at("0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1")
+
 
 @pytest.fixture
 def live_strat(Strategy):
-    yield Strategy.at('0xd4419DDc50170CB2DBb0c5B4bBB6141F3bCc923B')
+    yield Strategy.at("0xd4419DDc50170CB2DBb0c5B4bBB6141F3bCc923B")
+
 
 @pytest.fixture
 def live_vault_weth(pm, gov, rewards, guardian, management, token):
     Vault = pm(config["dependencies"][0]).Vault
-    yield Vault.at('0xa9fE4601811213c340e850ea305481afF02f5b28')
+    yield Vault.at("0xa9fE4601811213c340e850ea305481afF02f5b28")
+
 
 @pytest.fixture
 def live_strat_weth(Strategy):
-    yield Strategy.at('0xDdf11AEB5Ce1E91CF19C7E2374B0F7A88803eF36')
+    yield Strategy.at("0xDdf11AEB5Ce1E91CF19C7E2374B0F7A88803eF36")
+
 
 @pytest.fixture
 def vault(pm, gov, rewards, guardian, management, token):
@@ -124,7 +134,19 @@ def vault(pm, gov, rewards, guardian, management, token):
 
 
 @pytest.fixture
-def strategy(strategist, keeper, vault, token, weth, Strategy, gov, bdp_masterchef, bdp, router, pid):
+def strategy(
+    strategist,
+    keeper,
+    vault,
+    token,
+    weth,
+    Strategy,
+    gov,
+    bdp_masterchef,
+    bdp,
+    router,
+    pid,
+):
     strategy = strategist.deploy(Strategy, vault, bdp_masterchef, bdp, router, pid)
     strategy.setKeeper(keeper)
 

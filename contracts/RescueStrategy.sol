@@ -7,16 +7,12 @@ import "@yearnvaults/contracts/BaseStrategy.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 
 contract RescueStrategy is BaseStrategyInitializable {
+    constructor(address _vault) public BaseStrategyInitializable(_vault) {}
 
-    constructor(
-        address _vault
-    ) public BaseStrategyInitializable(_vault) {
-
-    }
-
-    function cloneRescueStrategy(
-        address _vault
-    ) external returns (address newStrategy) {
+    function cloneRescueStrategy(address _vault)
+        external
+        returns (address newStrategy)
+    {
         bytes20 addressBytes = bytes20(address(this));
 
         assembly {
@@ -34,7 +30,12 @@ contract RescueStrategy is BaseStrategyInitializable {
             newStrategy := create(0, clone_code, 0x37)
         }
 
-        RescueStrategy(newStrategy).initialize(_vault, msg.sender, msg.sender, msg.sender);
+        RescueStrategy(newStrategy).initialize(
+            _vault,
+            msg.sender,
+            msg.sender,
+            msg.sender
+        );
     }
 
     // ******** OVERRIDE THESE METHODS FROM BASE CONTRACT ************
@@ -44,7 +45,6 @@ contract RescueStrategy is BaseStrategyInitializable {
     }
 
     function estimatedTotalAssets() public view override returns (uint256) {
-        
         return want.balanceOf(address(this));
     }
 
@@ -57,23 +57,19 @@ contract RescueStrategy is BaseStrategyInitializable {
             uint256 _debtPayment
         )
     {
-
         uint256 wantBal = want.balanceOf(address(this));
 
         uint256 debt = vault.strategies(address(this)).totalDebt;
         _debtPayment = Math.min(wantBal, _debtOutstanding);
-        
-        if (wantBal > debt) { 
+
+        if (wantBal > debt) {
             _profit = wantBal - debt;
-            
-        } else {            
+        } else {
             _loss = debt - wantBal;
         }
     }
 
-    function adjustPosition(uint256 _debtOutstanding) internal override {
-        
-    }
+    function adjustPosition(uint256 _debtOutstanding) internal override {}
 
     function liquidatePosition(uint256 _amountNeeded)
         internal
@@ -82,13 +78,11 @@ contract RescueStrategy is BaseStrategyInitializable {
     {
         uint256 wantBal = want.balanceOf(address(this));
         _liquidatedAmount = Math.min(wantBal, _amountNeeded);
-        
     }
 
     // NOTE: Can override `tendTrigger` and `harvestTrigger` if necessary
 
-    function prepareMigration(address _newStrategy) internal override {
-    }
+    function prepareMigration(address _newStrategy) internal override {}
 
     function protectedTokens()
         internal
