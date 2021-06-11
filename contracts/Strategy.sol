@@ -182,10 +182,7 @@ contract Strategy is BaseStrategy {
         emit Cloned(newStrategy);
     }
 
-    function setRouter(address _router)
-        public
-        onlyAuthorized
-    {
+    function setRouter(address _router) public onlyAuthorized {
         require(
             _router == uniswapRouter || _router == sushiswapRouter,
             "incorrect router"
@@ -194,15 +191,10 @@ contract Strategy is BaseStrategy {
         router = _router;
         IERC20(reward).safeApprove(router, 0);
         IERC20(reward).safeApprove(router, uint256(-1));
-
     }
 
-    function setPath(address[] calldata _path)
-        public
-        onlyGovernance
-    {
+    function setPath(address[] calldata _path) public onlyGovernance {
         path = _path;
-
     }
 
     // ******** OVERRIDE THESE METHODS FROM BASE CONTRACT ************
@@ -235,33 +227,29 @@ contract Strategy is BaseStrategy {
 
         uint256 debt = vault.strategies(address(this)).totalDebt;
 
-        if (assets > debt) {
-            _debtPayment = _debtOutstanding;
-            _profit = assets - debt;
+        if (assets >= debt) {
+            _profit = assets.sub(debt);
+        } else {
+            _loss = debt.sub(assets);
+        }
 
-            uint256 amountToFree = _profit.add(_debtPayment);
+        _debtPayment = _debtOutstanding;
+        uint256 amountToFree = _debtPayment.add(_profit);
 
-            if (amountToFree > 0 && wantBal < amountToFree) {
-                liquidatePosition(amountToFree);
+        if (amountToFree > 0 && wantBal < amountToFree) {
+            liquidatePosition(amountToFree.sub(wantBal));
 
-                uint256 newLoose = want.balanceOf(address(this));
+            uint256 newLoose = want.balanceOf(address(this));
 
-                //if we dont have enough money adjust _debtOutstanding and only change profit if needed
-                if (newLoose < amountToFree) {
-                    if (_profit > newLoose) {
-                        _profit = newLoose;
-                        _debtPayment = 0;
-                    } else {
-                        _debtPayment = Math.min(
-                            newLoose - _profit,
-                            _debtPayment
-                        );
-                    }
+            // if we didnt free enough money, prioritize paying down debt before taking profit
+            if (newLoose < amountToFree) {
+                if (newLoose <= _debtPayment) {
+                    _profit = 0;
+                    _debtPayment = newLoose;
+                } else {
+                    _profit = newLoose.sub(_debtPayment);
                 }
             }
-        } else {
-            //serious loss should never happen but if it does lets record it accurately
-            _loss = debt - assets;
         }
     }
 
@@ -305,36 +293,45 @@ contract Strategy is BaseStrategy {
         _sell();
     }
 
-    function emergencyWithdrawal(uint256 _pid) external  onlyGovernance{
+    function emergencyWithdrawal(uint256 _pid) external onlyGovernance {
         ChefLike(masterchef).emergencyWithdraw(_pid);
     }
 
     //sell all function
     function _sell() internal {
-
         uint256 rewardBal = IERC20(reward).balanceOf(address(this));
-        if( rewardBal == 0){
+        if (rewardBal == 0) {
             return;
         }
 
-
-        if(path.length == 0){
+        if (path.length == 0) {
             address[] memory tpath;
-            if(address(want) != weth){
+            if (address(want) != weth) {
                 tpath = new address[](3);
                 tpath[2] = address(want);
-            }else{
+            } else {
                 tpath = new address[](2);
             }
-            
+
             tpath[0] = address(reward);
             tpath[1] = weth;
 
-            IUniswapV2Router02(router).swapExactTokensForTokens(rewardBal, uint256(0), tpath, address(this), now);
-        }else{
-            IUniswapV2Router02(router).swapExactTokensForTokens(rewardBal, uint256(0), path, address(this), now);
-        }  
-
+            IUniswapV2Router02(router).swapExactTokensForTokens(
+                rewardBal,
+                uint256(0),
+                tpath,
+                address(this),
+                now
+            );
+        } else {
+            IUniswapV2Router02(router).swapExactTokensForTokens(
+                rewardBal,
+                uint256(0),
+                path,
+                address(this),
+                now
+            );
+        }
     }
 
     function protectedTokens()
